@@ -1,0 +1,13 @@
+version: '3.7'
+services:
+  backend:
+    build: ./backend
+    ports:
+      - 8080:8080
+    environment:
+      - BATCH_MENU=1 # Number of threads to execute the menu
+      - BATCH_ARTICLE=8 # Number of threads to execute the articles
+  frontend:
+    build: ./frontend
+    ports:
+      - 80:80

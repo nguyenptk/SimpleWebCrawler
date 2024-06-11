@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Web Crawler</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #dddi
+        }
+    </style>
+</head>
+<body>
+    <h1>Simple Web Crawler</h1>
+    <p>This Simple Web Crawler uses to fetch the top 10 articles from the VNExpress. There are 02 actions: Execute and Load Data.</p>
+    <p>The "Execute" operation takes approximately 1 hour to complete the crawling data in background to fetch all articles in the main page, menu, and sub-menu. However, the pagination of a site is a limit of this crawler, it has not supported to fetch the next pages</p>
+    <p>While the "Load Data" button retrieves the top 10 articles from last week.</p>
+    <button id="execute" title="Start the crawler process">Execute</button>
+    <br>
+    <br>
+    <button id="loadData" title="Get top 10 articles">Load Data</button>
+    <br>
+    <br>
+    <span id="executeTime"></span>
+    <br>
+    <h3>Top 10 articles of https://vnexpress.net/</h1>
+    <table id="articlesTable">
+        <tr>
+            <th>Title</th>
+            <th>URL</th>
+            <th>Total Likes</th>
+            <th>Date</th>
+        </tr>
+    </table>
+
+    <script>
+        document.getElementById('execute').addEventListener('click', execute);
+        function execute() {
+            fetch('http://localhost:8080/webcrawler/v1/execute', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Content-Length': JSON.stringify({ website: 'https://vnexpress.net/' }).length.toString(),
+                },
+                body: JSON.stringify({ website: 'https://vnexpress.net/' }),
+            })
+                .then(response => {
+                    if (response.status === 200 || response.status === 400 || response.status === 500) {
+                        response.json().then(data => {
+                            alert(data.message);
+                        });
+                    } else {
+                        alert('Network response was not ok');
+                    }
+                    return;
+                })
+                .catch(error => {
+                    console.log('Error:', error.message);
+                });
+        }
+
+        document.getElementById('loadData').addEventListener('click', loadData);
+        function loadData() {
+            fetch('http://localhost:8080/webcrawler/v1/load', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Content-Length': JSON.stringify({ website: 'https://vnexpress.net/' }).length.toString(),
+                },
+                body: JSON.stringify({ website: 'https://vnexpress.net/' }),
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.message.articles || data.message.articles.length === 0) {
+                        alert('No articles found');
+                        return;
+                    }
+                    let table = document.getElementById('articlesTable');
+                    // Clear the table content to load the new data
+                    while (table.rows.length > 1) {
+                        table.deleteRow(1);
+                    }
+                    document.getElementById('executeTime').innerHTML = `Last Execution Time: ${new Date(data.message.executeTime).toLocaleString('en-GB', {
+                            timeZone: 'Asia/Bangkok',
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                        }) + ' (GMT+7)'}`;
+                    data.message.articles.forEach(function(article) {
+                        let row = table.insertRow(-1);
+                        let cell1 = row.insertCell(0);
+                        let cell2 = row.insertCell(1);
+                        let cell3 = row.insertCell(2);
+                        let cell4 = row.insertCell(3);
+                        cell1.innerHTML = article.title;
+                        cell2.innerHTML = `<a href="${article.url}" target="_blank">${article.url}</a>`;
+                        cell3.innerHTML = article.totalLikes;
+                        cell4.innerHTML = new Date(article.date).toLocaleString('en-GB', {
+                            timeZone: 'Asia/Bangkok',
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                        }) + ' (GMT+7)';
+                    });
+                })
+                .catch(error => {
+                    console.log('Error:', error.message);
+                });
+        }
+    </script>
+</body>
+</html>
