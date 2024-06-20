@@ -105,12 +105,12 @@ Errors during fetching and processing are logged, and retries are implemented wi
 ### Limitations
 
 This Simple Web Crawler has a few limitations:
-- Test coverage: 0%
+- Test coverage: 0%.
 - It cannot fetch menu or sub-menu links with pagination, missing older articles. A scheduler could handle this more efficiently with database storage instead of JSON files.
 - Certain links (e.g., `https://vnexpress.net/podcast/vnexpress-hom-nay` and `https://vnexpress.net/the-thao/hau-truong`) cannot be fetched due to PuppeteerSharp limitations. A blacklist can handle these URLs.
 - The current design does not efficiently handle concurrent processing of multiple websites or separate menu/sub-menu processing into worker pools.
 - Crawling duration is around 60-70 minutes per 8 CPUs in a Docker container environment. And `BATCH_MENU` and `BATCH_ARTICLE` are fixed after the handler is initiated.
-- Timeouts and retries need to be revisited
+- Timeouts and retries need to be revisited.
 
 ## How to Run
 
