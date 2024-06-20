@@ -2,7 +2,7 @@
 
 ## Overview
 
-Simple Web Crawler is a basic tool designed to crawl data from news websites. Currently, it supports `https://vnexpress.net/` to fetch the top 10 articles by total likes from the past week. Each successfully fetched article is stored in the `out/raw.json` file, tracking the top 10 articles aggregated by likes. For example, see [this sample article](https://vnexpress.net/canh-sat-meo-vac-lao-xuong-suoi-cuu-nguoi-4756681.html#box_comment_vne).
+Simple Web Crawler is a basic tool designed to crawl data from news websites. Currently, it supports `https://vnexpress.net` & `https://tuoitre.vn` to fetch the top 10 articles by total likes from the past week. Each successfully fetched article is stored in the `out/raw.json` file, then tracking the top 10 articles aggregated by likes. For example, see [this sample article](https://vnexpress.net/canh-sat-meo-vac-lao-xuong-suoi-cuu-nguoi-4756681.html#box_comment_vne).
 
 ## System Design
 
@@ -23,17 +23,28 @@ Backend (Controller)
        +--> Idempotence Check
        |         |
        |         v
-       |   CrawlerHandler
+       |   HandlerFactory
        |         |
-       |         +--> Target Websites (https://vnexpress.net/)
+       |         +--> VNExpressHandler (https://vnexpress.net/)
+       |         |         |
+       |         |         +--> Fetch & Process Articles
+       |         |         |
+       |         |         +--> Write to Storage [out/raw.json]
+       |         |         |
+       |         |         +--> Write to Storage [out/top_articles_vnexpress.json]
        |         |
-       |         +--> Storage (out/raw.json)
-       |         |
-       |         +--> Storage (out/top_articles.json)
+       |         +--> TuoiTreHandler (https://tuoitre.net/)
+       |                   |
+       |                   +--> Fetch & Process Articles
+       |                   |
+       |                   +--> Write to Storage [out/raw.json]
+       |                   |
+       |                   +--> Write to Storage [out/top_articles_tuoitre.json]
        |
        +--> LoadHandler
                  |
-                 +--> Storage (out/top_articles.json)
+                 +--> Aggregate Top Articles
+                 |
 ```
 
 ### Components
@@ -46,13 +57,14 @@ The project consists of a client and backend, networked together using Docker Co
 
 The core of the system is a server written in C#. Upon receiving a client request, the server fetches the main URL to retrieve primary articles, then navigates through menu and sub-menu links to gather additional articles.
 
-> The deployment environment can be configured with two options: `BATCH_MENU` and `BATCH_ARTICLE`. These control the number of threads for crawling articles and should be set to less than the total number of CPUs available on the machine.
+> The deployment environment can be configured with two options: `BATCH_MENU` and `BATCH_ARTICLE`. These control the number of threads for crawling articles and should be set to less than the total number of CPUs available on the machine. Depending on the current processing handlers, `BATCH_MENU` and `BATCH_ARTICLE` will be distributed to the handlers fairly.
 
 #### Workflow
 
 1. **Initialization**:
    - `Controller` handles routing and ensures idempotent requests.
-   - `CrawlerHandler` sets the execution start time and configures batch sizes.
+   - `CrawlerHandlerFactory` encapsulate the creation logic of different crawler handlers
+   - `ICrawlerHandler` sets the execution start time and configures batch sizes.
    - `HttpClient` fetches the main HTML content from the homepage URL.
 
 2. **Menu Link Extraction**:
@@ -67,7 +79,7 @@ The core of the system is a server written in C#. Upon receiving a client reques
    - Sub-menu links are processed in batches, and articles are extracted from the fetched HTML content.
 
 5. **Article Details Extraction**:
-   - For each article, details such as title, URL, publication date, and total likes are extracted.
+   - For each article, details such as website, title, URL, publication date, and total likes are extracted.
    - Only articles from the past week are considered valid.
 
 6. **Concurrency Management**:
@@ -98,7 +110,7 @@ This Simple Web Crawler has a few limitations:
 - Certain links (e.g., `https://vnexpress.net/podcast/vnexpress-hom-nay` and `https://vnexpress.net/the-thao/hau-truong`) cannot be fetched due to PuppeteerSharp limitations. A blacklist can handle these URLs.
 - The current design does not efficiently handle concurrent processing of multiple websites or separate menu/sub-menu processing into worker pools.
 - Crawling duration is around 60-70 minutes per 8 CPUs in a Docker container environment.
-- Timeout and retries needs to revisited
+- Timeouts and retries need to be revisited
 
 ## How to Run
 

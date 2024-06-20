@@ -16,6 +16,7 @@ namespace backend.server
 
     public class Article
     {
+        public string Website { get; set; }
         public string Title { get; set; }
         public string Url { get; set; }
         public int TotalLikes { get; set; }

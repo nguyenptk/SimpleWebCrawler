@@ -1,7 +1,7 @@
+using backend.server;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-using backend.server;
 
 namespace WebCrawler
 {
@@ -10,7 +10,9 @@ namespace WebCrawler
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
-            services.AddScoped<CrawlerHandler>();
+            services.AddScoped<ICrawlerHandlerFactory, CrawlerHandlerFactory>();
+            services.AddScoped<VnExpressHandler>();
+            services.AddScoped<TuoiTreHandler>();
             services.AddScoped<LoadHandler>();
             services.AddCors(options =>
             {
