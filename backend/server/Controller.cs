@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using System;
-using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace backend.server
 {
@@ -10,14 +10,13 @@ namespace backend.server
     [Route("webcrawler/v1")]
     public class Controller : ControllerBase
     {
-        private readonly CrawlerHandler _crawler;
+        private readonly ICrawlerHandlerFactory _crawlerHandlerFactory;
         private readonly LoadHandler _load;
-        private readonly List<string> whitelist = new List<string> { "https://vnexpress.net/" };
-        private static readonly ConcurrentDictionary<string, bool> _processingWebsites = new ConcurrentDictionary<string, bool>();
+        public static ConcurrentDictionary<string, bool> ProcessingWebsites = new ConcurrentDictionary<string, bool>();
 
-        public Controller(CrawlerHandler crawler, LoadHandler load)
+        public Controller(ICrawlerHandlerFactory crawlerHandlerFactory, LoadHandler load)
         {
-            _crawler = crawler;
+            _crawlerHandlerFactory = crawlerHandlerFactory;
             _load = load;
         }
 
@@ -29,25 +28,29 @@ namespace backend.server
                 return BadRequest(new { message = "Website is required" });
             }
 
-            if (!whitelist.Contains(request.Website)) {
+            if (!Constants.WebsiteMap.ContainsKey(request.Website)) {
                 return BadRequest(new { message = "Invalid website" });
             }
 
-            if (_processingWebsites.TryAdd(request.Website, true))
+            if (ProcessingWebsites.TryAdd(request.Website, true))
             {
                 try
                 {
-                    await _crawler.StartCrawlerAsync(request.Website);
+                    var handler = _crawlerHandlerFactory.Create(request.Website);
+                    if (handler != null)
+                    {
+                        await handler.StartCrawlerAsync(request.Website);
+                    }
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Unhandled exception: {ex.Message}");
-                    _processingWebsites.TryRemove(request.Website, out _);
+                    ProcessingWebsites.TryRemove(request.Website, out _);
                     return StatusCode(500, new { message = "An error occurred while processing your request" });
                 }
                 finally
                 {
-                    _processingWebsites.TryRemove(request.Website, out _);
+                    ProcessingWebsites.TryRemove(request.Website, out _);
                 }
             }
             else

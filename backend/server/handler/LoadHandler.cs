@@ -8,20 +8,17 @@ namespace backend.server
 {
     public class LoadHandler
     {
-        public LoadHandler()
-        {
-        }
-
-        public ArticleData LoadData(string homepageUrl)
+        public ArticleData LoadData(string website)
         {
             var articleData = new ArticleData
             {
                 Articles = new List<Article>()
             };
 
-            if (File.Exists(Constants.TopArticlesJsonPath))
+            string topArticlesJsonPath = GetTopArticlesJsonPath(website);
+            if (File.Exists(topArticlesJsonPath))
             {
-                var existingJson = File.ReadAllText(Constants.TopArticlesJsonPath);
+                var existingJson = File.ReadAllText(topArticlesJsonPath);
                 articleData = JsonConvert.DeserializeObject<ArticleData>(existingJson) ?? new ArticleData
                 {
                     Articles = new List<Article>()
@@ -40,19 +37,28 @@ namespace backend.server
 
                 // Filter the top 10 articles to those from the last week
                 articleData.Articles = articleData.Articles
-                    .Where(a => a.Date >= oneWeekAgo)
+                    .Where(a => a.Date >= oneWeekAgo && a.Website == website)
                     .OrderByDescending(a => a.TotalLikes)
                     .Take(10)
                     .ToList();
             }
 
-            // Convert the DateTime to UTC
-            foreach (var article in articleData.Articles)
-            {
-                article.Date = article.Date.AddHours(-7);
-            }
-
             return articleData;
+        }
+
+        public static string GetTopArticlesJsonPath(string website)
+        {
+            string topArticlesJsonPath = Constants.TopArticlesJsonPath;
+            switch (Constants.WebsiteMap[website])
+            {
+                case Website.VnExpress:
+                    topArticlesJsonPath = Constants.TopArticlesVnExpressJsonPath;
+                    break;
+                case Website.TuoiTre:
+                    topArticlesJsonPath = Constants.TopArticlesTuoiTreJsonPath;
+                    break;
+            }
+            return topArticlesJsonPath;
         }
     }
 }
