@@ -221,6 +221,7 @@ namespace backend.server
                 return null;
             }
 
+            // TODO: move to configs
             const int retryCount = 3;
             const int delay = 2000; // 2 seconds delay between retries
             const int timeout = 15000; // Set the timeout to 15 seconds
@@ -229,7 +230,7 @@ namespace backend.server
             {
                 try
                 {
-                    await page.SetUserAgentAsync("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
+                    await page.SetUserAgentAsync(Constants.UserAgent);
 
                     await page.GoToAsync(url, new NavigationOptions
                     {
@@ -254,6 +255,7 @@ namespace backend.server
 
         private async Task<Article> ProcessArticle(Page page, string articleUrl, string articleTitle)
         {
+            // TODO: move to configs
             int retryCount = 3;
             int delay = 2000; // 2 seconds delay between retries
 
