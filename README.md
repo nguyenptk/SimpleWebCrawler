@@ -43,7 +43,7 @@ Backend (Controller)
        |
        +--> LoadHandler
                  |
-                 +--> Aggregate Top Articles
+                 +--> Get Top Articles
                  |
 ```
 
@@ -63,8 +63,8 @@ The core of the system is a server written in C#. Upon receiving a client reques
 
 1. **Initialization**:
    - `Controller` handles routing and ensures idempotent requests.
-   - `CrawlerHandlerFactory` encapsulate the creation logic of different crawler handlers
-   - `ICrawlerHandler` sets the execution start time and configures batch sizes.
+   - `CrawlerHandlerFactory` encapsulate the creation logic of different crawler handlers.
+   - `ICrawlerHandler` implemented by crawler handlers, responsible for starting the crawling process.
    - `HttpClient` fetches the main HTML content from the homepage URL.
 
 2. **Menu Link Extraction**:
